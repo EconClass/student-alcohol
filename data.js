@@ -1,48 +1,38 @@
-const margin = ({ top: 25, right: 20, bottom: 35, left: 40 });
+const margin = ({ top: 10, right: 10, bottom: 20, left: 40 });
 
-const x = d3.scaleLinear()
-  .domain(d3.extent(data, d => d.x)).nice()
-  .range([margin.left, width - margin.right]);
+const height = 600;
 
-const y = d3.scaleLinear()
-  .domain(d3.extent(data, d => d.y)).nice()
-  .range([height - margin.bottom, margin.top]);
+const xAxis = g => g
+  .attr("transform", `translate(0,${height - margin.bottom})`)
+  .call(d3.axisBottom(x).tickSizeOuter(0))
+  .call(g => g.selectAll(".domain").remove());
 
-const xAxis = g => {
-  g
-    .attr("transform", `translate(0,${height - margin.bottom})`)
-    .call(d3.axisBottom(x).ticks(width / 80))
-    .call(g => g.select(".domain").remove())
-    .call(g => g.append("text")
-      .attr("x", width)
-      .attr("y", margin.bottom - 4)
-      .attr("fill", "currentColor")
-      .attr("text-anchor", "end")
-      .text(data.x));
-};
+const yAxis = g => g
+  .attr("transform", `translate(${margin.left},0)`)
+  .call(d3.axisLeft(y).ticks(null, "s"))
+  .call(g => g.selectAll(".domain").remove());
 
-const render = async () => {
-  const data = await d3.csv('data/student-mat.csv');
-  console.log(data);
-  // const parsed = data.filter(student => {
-  //   const { G3, Walc, Dalc } = student;
-  //   return G3 && Walc && Dalc;
-  // });
-  // console.log(parsed);
+const svg = d3.create("svg")
+  .attr("viewBox", [0, 0, width, height]);
 
-  const width = height = 200;
-  const svg = d3.select('body')
-    .append('svg')
-    .attr("viewBox", [0, 0, width, height]);
+svg.append("g")
+  .selectAll("g")
+  .data(series)
+  .join("g")
+  .attr("fill", d => color(d.key))
+  .selectAll("rect")
+  .data(d => d)
+  .join("rect")
+  .attr("x", (d, i) => x(d.data.name))
+  .attr("y", d => y(d[1]))
+  .attr("height", d => y(d[0]) - y(d[1]))
+  .attr("width", x.bandwidth())
+  .append("title")
+  .text(d => `${d.data.name} ${d.key}
+${formatValue(d.data[d.key])}`);
 
-  svg.append("g")
-    .call(xAxis);
+svg.append("g")
+  .call(xAxis);
 
-  svg.append("g")
-    .call(yAxis);
-
-  svg.append("g")
-    .call(grid);
-};
-
-render();
+svg.append("g")
+  .call(yAxis);
